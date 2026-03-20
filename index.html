@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Excusify — Intelligent Excuse Generation</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #F5F0E8;
+    --surface: #FFFDF9;
+    --border: #E2DAC8;
+    --text: #1A1612;
+    --muted: #7A7060;
+    --accent: #C96442;
+    --accent-hover: #B05535;
+    --pill-bg: #EDE7DB;
+    --pill-active-bg: #1A1612;
+    --pill-active-text: #FFFDF9;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-quota {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .nav-quota.low { color: var(--accent); font-weight: 500; }
+  .hero {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 80px 24px 60px;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(201,100,66,0.10);
+    padding: 5px 14px;
+    border-radius: 100px;
+    margin-bottom: 28px;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(2.8rem, 7vw, 4.5rem);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .hero-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 460px;
+    margin: 0 auto 48px;
+    line-height: 1.7;
+  }
+  .card-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 44px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.04);
+  }
+  .pill-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .pill {
+    font-size: 0.78rem;
+    font-weight: 400;
+    padding: 6px 16px;
+    border-radius: 100px;
+    background: var(--pill-bg);
+    color: var(--muted);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .pill:hover { color: var(--text); background: var(--border); }
+  .pill.active { background: var(--pill-active-bg); color: var(--pill-active-text); }
+  .output {
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .output-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(1.15rem, 2.5vw, 1.5rem);
+    line-height: 1.5;
+    text-align: center;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .output-placeholder {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .output-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+    padding: 0 2px;
+    min-height: 20px;
+  }
+  .cat-tag { font-weight: 500; color: var(--accent); }
+  .believability-wrap { display: flex; align-items: center; gap: 8px; }
+  .bel-bar {
+    width: 80px; height: 3px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bel-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(.22,.68,0,1.2);
+    width: 0%;
+  }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-gen {
+    flex: 1;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-gen:hover { background: var(--accent-hover); }
+  .btn-gen:active { transform: scale(0.98); }
+  .btn-copy {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 14px 20px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-copy:hover { border-color: var(--text); color: var(--text); }
+  .features {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 80px 48px;
+  }
+  .features-inner { max-width: 900px; margin: 0 auto; }
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 40px;
+    text-align: center;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--border);
+  }
+  .feature-cell { background: var(--surface); padding: 32px 28px; }
+  .feature-icon { font-size: 1.4rem; margin-bottom: 14px; display: block; }
+  .feature-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .feature-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.8rem;
+    font-weight: 400;
+    padding: 10px 22px;
+    border-radius: 100px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s;
+    z-index: 100;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @keyframes popIn {
+    from { opacity: 0.3; transform: scale(0.99); }
+    to   { opacity: 1;   transform: scale(1); }
+  }
+  .output.refresh { animation: popIn 0.3s ease both; }
+
+  /* ── COUPON GATE MODAL ── */
+  .gate-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,22,18,0.45);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .gate-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .gate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 44px 48px;
+    max-width: 420px;
+    width: calc(100% - 48px);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.12);
+    text-align: center;
+    transform: translateY(10px);
+    transition: transform 0.25s;
+  }
+  .gate-overlay.visible .gate-card { transform: translateY(0); }
+  .gate-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+  .gate-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .gate-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 28px;
+  }
+  .gate-sub strong { color: var(--text); font-weight: 500; }
+  .coupon-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .coupon-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 12px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .coupon-input:focus { border-color: var(--accent); }
+  .coupon-input.error { border-color: #D04545; }
+  .coupon-submit {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 100px;
+    padding: 12px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .coupon-submit:hover { background: var(--accent-hover); }
+  .gate-error {
+    font-size: 0.78rem;
+    color: #D04545;
+    min-height: 18px;
+    margin-bottom: 4px;
+    transition: opacity 0.2s;
+  }
+  .gate-success {
+    font-size: 0.82rem;
+    color: #3A7A50;
+    font-weight: 500;
+    min-height: 18px;
+  }
+  .btn-gen.locked {
+    background: var(--muted);
+  }
+  .btn-gen.locked:hover { background: var(--muted); }
+
+  @media (max-width: 600px) {
+    nav { padding: 16px 20px; }
+    .card { padding: 28px 22px; }
+    .features { padding: 60px 20px; }
+    footer { flex-direction: column; gap: 10px; text-align: center; }
+    .gate-card { padding: 36px 28px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">Excus<span>ify</span></a>
+  <span class="nav-quota" id="nav-quota">10 free excuses remaining</span>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">Intelligent excuse generation</div>
+  <h1>The excuse you need,<br><em>when you need it.</em></h1>
+  <p class="hero-sub">Excusify delivers thoughtful, contextually appropriate excuses across every situation — crafted to sound natural, reasonable, and completely plausible.</p>
+</section>
+
+<div class="card-wrap">
+  <div class="card">
+    <div class="pill-row" id="pills"></div>
+    <div class="output" id="output">
+      <p class="output-placeholder">Select a category and generate your excuse.</p>
+    </div>
+    <div class="output-meta" id="meta" style="opacity:0">
+      <span class="cat-tag" id="cat-tag"></span>
+      <div class="believability-wrap">
+        <span>Believability</span>
+        <div class="bel-bar"><div class="bel-fill" id="bel-fill"></div></div>
+        <span id="bel-pct">—</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-gen" id="btn-gen" onclick="generate()">Generate excuse</button>
+      <button class="btn-copy" onclick="copyExcuse()">Copy</button>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button onclick="openGate(true)" style="background:none;border:none;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;">Have a coupon code?</button>
+    </div>
+  </div>
+</div>
+
+<section class="features">
+  <div class="features-inner">
+    <p class="section-label">Why Excusify</p>
+    <div class="features-grid">
+      <div class="feature-cell">
+        <span class="feature-icon">🗂️</span>
+        <div class="feature-title">1,000+ excuses</div>
+        <p class="feature-desc">An extensive library spanning every conceivable life situation, from the mundane to the extraordinary.</p>
+      </div>
+      <div class="feature-cell">
+        <span class="feature-icon">🎯</span>
+        <div class="feature-title">Context-aware</div>
+        <p class="feature-desc">Organized by situation type so every excuse lands with the right tone and level of detail.</p>
+      </div>
+      <div class="feature-cell">
+        <span class="feature-icon">📊</span>
+        <div class="feature-title">Believability score</div>
+        <p class="feature-desc">Each excuse comes rated for plausibility, so you can calibrate the risk before deployment.</p>
+      </div>
+      <div class="feature-cell">
+        <span class="feature-icon">⚡</span>
+        <div class="feature-title">Instant results</div>
+        <p class="feature-desc">No sign-up, no waiting. Your excuse is ready the moment you need it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>© 2025 Excusify, Inc. All rights reserved.</span>
+  <span>Made with restraint and plausible deniability.</span>
+</footer>
+
+<!-- ── COUPON GATE ── -->
+<div class="gate-overlay" id="gate" onclick="handleGateBackdrop(event)">
+  <div class="gate-card">
+    <span class="gate-icon">🎟️</span>
+    <div class="gate-title">You've used your free excuses.</div>
+    <p class="gate-sub">You've gone through your <strong>10 free excuses</strong>. Enter a coupon code to unlock more — no judgment, just more plausible deniability.</p>
+    <div class="coupon-row">
+      <input class="coupon-input" id="coupon-input" type="text" placeholder="Enter coupon code" autocomplete="off" spellcheck="false"/>
+      <button class="coupon-submit" onclick="redeemCoupon()">Apply</button>
+    </div>
+    <div class="gate-error" id="gate-error"></div>
+    <div class="gate-success" id="gate-success"></div>
+    <div id="gate-dismiss-wrap" style="margin-top:20px;display:none;">
+      <button onclick="closeGate()" style="background:none;border:none;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard</div>
+
+<script>
+/* =====================================================================
+   COUPON CODE CONFIGURATION
+   Add entries below to define valid coupon codes and how many
+   additional excuses each one grants.
+   Format: "CODE": number_of_excuses
+   ===================================================================== */
+const COUPON_CODES = {
+  "SORRY10":   10,
+  "MYDOG":     25,
+  "TRAFFIC":   50,
+  "EXCUSEPRO": 100,
+  "UNLIMITED": 9999,
+};
+
+/* =====================================================================
+   FREE EXCUSE LIMIT — change this number to adjust the free allowance
+   ===================================================================== */
+const FREE_LIMIT = 10;
+
+/* ================================================================== */
+
+const categories = { "All":null,"Work":"work","School":"school","Social":"social","Family":"family","Health":"health","Tech":"tech","Traffic":"traffic","Weather":"weather","Pets":"pets","Misc":"misc" };
+
+const excuses = {
+work:[
+  {t:"My calendar invite sent me to the wrong conference room and I spent 20 minutes in a stranger's quarterly review.",b:82},
+  {t:"I was on a call that was supposed to be 30 minutes and the host forgot to end it.",b:92},
+  {t:"My laptop pushed an update right as I was about to join the meeting.",b:95},
+  {t:"The office Wi-Fi went down and I had to hotspot, but my signal was too weak.",b:88},
+  {t:"I was finalizing the deck and lost track of time.",b:90},
+  {t:"I got pulled into an impromptu standup that ran long.",b:93},
+  {t:"My Outlook calendar didn't sync properly and I missed the notification.",b:85},
+  {t:"I was helping a colleague debug a critical issue and couldn't step away.",b:88},
+  {t:"The client called right before the meeting and I had to take it.",b:91},
+  {t:"I was waiting on a response before I could move forward.",b:80},
+  {t:"There was a conflict in the project timeline I had to resolve first.",b:82},
+  {t:"My headset died mid-call and I had to find another one.",b:87},
+  {t:"The VPN kept dropping and I had to reconnect repeatedly.",b:90},
+  {t:"I was in the middle of a code review that couldn't be paused.",b:84},
+  {t:"My email client froze and I lost an hour of drafts.",b:78},
+  {t:"I was pulling together last-minute data for the presentation.",b:88},
+  {t:"The approval chain had an unexpected bottleneck.",b:79},
+  {t:"I accidentally joined the wrong recurring meeting and realized too late.",b:83},
+  {t:"My screen share wasn't working and IT took 15 minutes to fix it.",b:89},
+  {t:"I had a conflicting priority that came from leadership this morning.",b:86},
+  {t:"My 2FA app stopped generating codes and I couldn't log in.",b:84},
+  {t:"The quarterly report had a discrepancy I had to chase down.",b:87},
+  {t:"I was covering for a colleague who called in sick.",b:91},
+  {t:"The build pipeline failed at the worst possible moment.",b:82},
+  {t:"I was reviewing a contract that needed same-day feedback.",b:85},
+  {t:"My monitor stopped working and I had to reroute to another desk.",b:86},
+  {t:"I had back-to-back calls with no buffer and ran into a time zone issue.",b:89},
+  {t:"The shared document had a version conflict and we had to sort it out.",b:81},
+  {t:"My manager asked me to join an urgent all-hands.",b:93},
+  {t:"I was onboarding a new team member and it took longer than planned.",b:88},
+  {t:"The deployment went sideways and I was helping roll it back.",b:85},
+  {t:"I missed the Slack message because notifications were snoozed.",b:83},
+  {t:"I was in a focus block and had Do Not Disturb on by accident.",b:76},
+  {t:"The project scope changed last minute and I had to restructure the plan.",b:84},
+  {t:"I was preparing talking points for a call that moved up by an hour.",b:87},
+  {t:"A vendor called an emergency sync without warning.",b:82},
+  {t:"The analytics dashboard was down and I couldn't pull the numbers.",b:83},
+  {t:"I was dealing with an invoice discrepancy before month-end cutoff.",b:85},
+  {t:"My colleague's presentation crashed and I was helping rescue the file.",b:87},
+  {t:"I was responding to an escalated customer ticket that needed immediate attention.",b:90},
+  {t:"I accidentally sent an email to the wrong distribution list and had to do damage control.",b:79},
+  {t:"My password expired mid-morning and I got locked out of three systems.",b:84},
+  {t:"I was finishing a peer review that the team was blocked on.",b:86},
+  {t:"The office printer had a paper jam during a crucial print run.",b:78},
+  {t:"A production bug came in at the exact wrong time.",b:88},
+  {t:"I was documenting a process that had never been written down before.",b:80},
+  {t:"My task management system lost my to-do list overnight.",b:72},
+  {t:"I was updating the roadmap after a strategic pivot was announced.",b:84},
+  {t:"There was a last-minute speaker change and I had to prep in 20 minutes.",b:83},
+  {t:"I was triaging a backlog that grew significantly over the weekend.",b:81},
+  {t:"The team retrospective ran 45 minutes over, as they do.",b:90},
+  {t:"I was chasing a signature that was holding up the entire project.",b:86},
+  {t:"My company laptop had a security patch that forced a restart.",b:91},
+  {t:"I was coordinating across three time zones and lost track of my own.",b:83},
+  {t:"The Zoom link was wrong in the invite and I couldn't find the real one.",b:85},
+  {t:"I was blocked on a dependency that was supposed to be ready yesterday.",b:82},
+  {t:"My status report took three times longer than expected to compile.",b:79},
+  {t:"I had to handle a compliance issue that landed in my inbox this morning.",b:87},
+  {t:"The internal system migration caused me to lose access to key files.",b:84},
+  {t:"I was running point on an incident that affected multiple teams.",b:89},
+  {t:"I had a sync with a stakeholder who doesn't respect calendar blocks.",b:83},
+  {t:"My notes app didn't sync and I lost all my prep work.",b:77},
+  {t:"I was pulled into a budget reconciliation that couldn't wait.",b:85},
+  {t:"The performance review cycle opened today and I had 12 reviews to submit.",b:88},
+  {t:"I was cross-referencing data between two systems that don't talk to each other.",b:81},
+  {t:"My keyboard started double-typing and every message I sent looked garbled.",b:76},
+  {t:"I was leading a working session that the team needed more time to complete.",b:85},
+  {t:"The external consultant needed an urgent briefing before their call.",b:84},
+  {t:"I was managing a stakeholder who had concerns that needed addressing before we could proceed.",b:86},
+  {t:"My standing desk malfunctioned and I was stuck at the wrong height for two hours.",b:60},
+  {t:"The internal wiki was read-only during a scheduled maintenance window.",b:83},
+  {t:"I was reconciling budget codes after an org restructure.",b:79},
+  {t:"A key file was accidentally deleted and recovery took longer than expected.",b:82},
+  {t:"I was coordinating a last-minute gift for a colleague's farewell.",b:85},
+  {t:"My task ran over because the data set was larger than estimated.",b:84},
+  {t:"The meeting room had a double-booking and we had to find another space.",b:88},
+  {t:"I was updating my tickets before the sprint review.",b:83},
+  {t:"The CEO dropped into the team channel and I had to respond promptly.",b:91},
+  {t:"I was formatting a report that kept breaking in different versions of Excel.",b:80},
+  {t:"I had to rewrite the brief because the direction changed overnight.",b:83},
+  {t:"The network drive was unmounted and IT couldn't reach me for an hour.",b:82},
+  {t:"I was triaging support tickets during a product incident.",b:87},
+  {t:"My badge stopped working and I was stuck in the lobby for 20 minutes.",b:84},
+  {t:"A senior stakeholder requested changes to the presentation 10 minutes before showtime.",b:90},
+  {t:"I lost track of time deep in a spreadsheet that had no clear end.",b:79},
+  {t:"I was asked to mentor a junior colleague who had an urgent question.",b:86},
+  {t:"The translation of the document took longer than the agency promised.",b:78},
+  {t:"My project management tool sent no reminders and I genuinely forgot.",b:75},
+  {t:"I was cleaning up technical debt before the end of the sprint.",b:81},
+  {t:"The integration broke and I was debugging the logs line by line.",b:84},
+  {t:"I was waiting on legal sign-off that was supposed to come yesterday.",b:86},
+  {t:"I misjudged how long the commute would be with the new office location.",b:87},
+  {t:"I was compiling meeting notes that were needed before the next call.",b:82},
+  {t:"My entire browser history and bookmarks got wiped by the IT reset.",b:74},
+  {t:"The dashboard refresh was taking 40 minutes and I couldn't submit without it.",b:78},
+  {t:"I was providing feedback on a proposal that was going to the board today.",b:88},
+  {t:"The printer queue was backed up by 47 jobs when I arrived.",b:83},
+  {t:"I was moderating a heated Slack thread before it escalated.",b:80},
+  {t:"My office chair broke and HR took an hour to find a replacement.",b:72},
+  {t:"I was reviewing a risk register that had significant new entries.",b:82},
+  {t:"The coffee machine broke and productivity across the floor was affected.",b:76},
+  {t:"I had to re-record a training video because the audio had background noise throughout.",b:81},
+  {t:"A regulatory filing deadline surfaced that I wasn't previously aware of.",b:86},
+  {t:"I was pulled into an emergency vendor call regarding a contract renewal.",b:85},
+  {t:"The shared inbox had 200 unread messages from the weekend that needed triaging.",b:82},
+],
+school:[
+  {t:"My laptop battery died and the charger was in my other bag.",b:87},
+  {t:"The library printer ran out of ink at 11:58 PM.",b:84},
+  {t:"I read the wrong chapter for today's discussion.",b:80},
+  {t:"My citation manager crashed and deleted all my references.",b:78},
+  {t:"The study group ran until 2 AM and my alarm didn't go off.",b:85},
+  {t:"I submitted to the wrong assignment portal.",b:83},
+  {t:"The campus internet was down during the submission window.",b:89},
+  {t:"I had two exams on the same day and ran out of time to revise for this one.",b:88},
+  {t:"My professor's office hours were cancelled and I had a question I needed answered first.",b:82},
+  {t:"I accidentally saved over my final draft with the rough draft.",b:79},
+  {t:"My textbook didn't have the edition that matched the problem set.",b:81},
+  {t:"The TA gave feedback that contradicted the rubric and I had to reconcile both.",b:83},
+  {t:"I was helping a friend through a difficult week and lost track of my own deadlines.",b:85},
+  {t:"Google Scholar kept timing out every time I tried to pull my sources.",b:80},
+  {t:"My dorm had a fire drill at 3 AM and I never properly got back to sleep.",b:90},
+  {t:"The course portal showed the wrong due date until this morning.",b:86},
+  {t:"I misread the 12-point requirement as a 12-page requirement and had to cut 8 pages.",b:78},
+  {t:"My roommate borrowed my charger without asking and my laptop died overnight.",b:84},
+  {t:"I was elected to take notes at a club meeting that ran long.",b:79},
+  {t:"My bus was delayed and I arrived to find the doors had been locked.",b:87},
+  {t:"I had a practicum placement that ran two hours over schedule.",b:88},
+  {t:"My submission was rejected by the system for a file format issue I didn't know about.",b:82},
+  {t:"I was waiting on a co-author to send their section.",b:83},
+  {t:"The assignment description was updated after I had already started.",b:85},
+  {t:"I was revising based on professor feedback from the draft and ran out of time.",b:82},
+  {t:"The word count tool counted my header and bibliography and I went 400 words over.",b:77},
+  {t:"My flash drive was corrupted and I had no backup.",b:80},
+  {t:"I attended the wrong lecture section for three weeks before realizing.",b:72},
+  {t:"The university email was down and I never got the reminder.",b:84},
+  {t:"I had a mandatory orientation event that wasn't marked on the academic calendar.",b:86},
+  {t:"My financial aid situation required same-day paperwork and I had to prioritize it.",b:90},
+  {t:"The group project partners stopped responding 48 hours before the deadline.",b:87},
+  {t:"I was peer-reviewing 8 submissions before I could submit my own.",b:81},
+  {t:"My academic advisor scheduled a required meeting that conflicted with this class.",b:88},
+  {t:"The journal article I needed was behind a paywall and interlibrary loan took a week.",b:82},
+  {t:"I misjudged the length of the bibliography and had to reformat everything.",b:78},
+  {t:"There was a campus-wide alert that kept interrupting my study session.",b:83},
+  {t:"My study space was taken by a group event I wasn't notified about.",b:79},
+  {t:"I spent four hours on a problem that was listed as optional.",b:76},
+  {t:"My professor sent supplementary reading at midnight before the exam.",b:88},
+  {t:"I was proofreading another student's thesis as a favor and lost the afternoon.",b:80},
+  {t:"The exam schedule conflicted with my work shift and I had to rearrange both.",b:86},
+  {t:"My topic was already taken and I had to start the paper from scratch on Tuesday.",b:83},
+  {t:"I lost my student ID and couldn't access the building where my notes were.",b:81},
+  {t:"The course discussion board had conflicting answers from the instructor and the TA.",b:79},
+  {t:"I was up revising for a different exam and accidentally studied the wrong material.",b:84},
+  {t:"My online exam was flagged by the proctoring software and I spent 30 minutes appealing.",b:82},
+  {t:"The simulation software for the assignment required a specific browser that I didn't have.",b:79},
+  {t:"I had a health centre appointment that was months out and I couldn't reschedule.",b:91},
+  {t:"The lecture recording wasn't posted in time for me to review before today.",b:84},
+  {t:"I had a campus job shift that was mandatory and couldn't be swapped.",b:87},
+  {t:"My thesis supervisor requested urgent revisions before a committee review.",b:89},
+  {t:"The lab equipment I needed was booked solid and I had to wait for a slot.",b:83},
+  {t:"I was selected for a mandatory research survey that locked my email for an hour.",b:75},
+  {t:"My student account was put on hold due to a fee I didn't know about.",b:82},
+  {t:"The online library system was down during peak submission hours.",b:86},
+  {t:"I had a work-study obligation I couldn't defer.",b:88},
+  {t:"My group dropped the project the day before it was due and I had to redo it solo.",b:85},
+  {t:"The plagiarism checker flagged my own previous work and I had to file an appeal.",b:80},
+  {t:"I was covering a shift for another student worker and it ran over.",b:83},
+  {t:"My research data was in a format that the analysis software didn't support.",b:79},
+  {t:"The seminar I attended for extra credit ran until 9 PM and I had nothing left.",b:81},
+  {t:"My registration hold wasn't lifted in time and I spent the morning sorting it out.",b:84},
+  {t:"I had a capstone presentation that was moved up without notice.",b:87},
+  {t:"The scanner at the library was broken and my handwritten notes couldn't be submitted.",b:80},
+  {t:"I had a conflict between two required courses and had to petition for an override.",b:83},
+  {t:"My professor replied to my draft at 11:45 PM and I felt compelled to revise overnight.",b:82},
+  {t:"The university portal timed out three times while I was completing a long form.",b:84},
+  {t:"I was on the student committee and had an emergency vote to manage.",b:79},
+  {t:"My external hard drive corrupted and I lost three weeks of research.",b:81},
+  {t:"The zoom session for my remote class crashed and I lost my connection entirely.",b:85},
+  {t:"I had a grant application deadline overlap with my coursework deadline.",b:87},
+  {t:"My internship supervisor sent urgent feedback I had to act on immediately.",b:84},
+  {t:"The campus was on a weather advisory and transit wasn't running.",b:89},
+  {t:"I had a required vaccination appointment that was the only available slot.",b:91},
+  {t:"The course website was migrated to a new system and I couldn't find anything.",b:80},
+  {t:"I was running the student newspaper that week and press night went until midnight.",b:82},
+  {t:"My computer science IDE had a conflict I spent six hours diagnosing.",b:78},
+  {t:"The statistics software license expired and I had to wait for IT to renew it.",b:81},
+  {t:"My TA marked the wrong submission and it took a week to sort out.",b:83},
+  {t:"I was nominated to speak at a departmental event on very short notice.",b:82},
+  {t:"My scholarship renewal required documentation I had to gather urgently.",b:88},
+  {t:"I was managing a student crisis in my role as a peer support volunteer.",b:87},
+  {t:"The library book I reserved was checked out despite showing as available.",b:79},
+  {t:"I had an international student compliance requirement that was time-sensitive.",b:87},
+  {t:"My capstone partner withdrew from the course without warning.",b:85},
+  {t:"I was running elections for the student union and the vote counting overran.",b:79},
+  {t:"My lab partner had an emergency and I had to redo the entire experiment.",b:84},
+  {t:"The departmental seminar I had to attend for credit conflicted with my study block.",b:81},
+  {t:"I accidentally submitted a draft that ended mid-sentence.",b:78},
+  {t:"My campus accommodation had a maintenance emergency overnight.",b:86},
+  {t:"I had a scholarship interview I couldn't reschedule.",b:90},
+  {t:"The peer review platform locked me out after one failed login attempt.",b:82},
+  {t:"I was finishing a letter of recommendation for a friend that was due today.",b:79},
+  {t:"My study abroad paperwork had a missing document that needed urgent sourcing.",b:84},
+  {t:"I overestimated how much work I'd done and underestimated how much remained.",b:80},
+  {t:"The wrong version of my essay was in my submission folder.",b:82},
+  {t:"I was in a mental health first aid training the university made mandatory.",b:88},
+  {t:"My graduation audit flagged a missing requirement I now have to resolve.",b:84},
+],
+social:[
+  {t:"I completely lost track of time and didn't realize how late it was.",b:83},
+  {t:"Something came up at the last minute that I couldn't reschedule.",b:86},
+  {t:"I've been dealing with a family situation this week.",b:90},
+  {t:"I genuinely thought it was next weekend.",b:78},
+  {t:"My phone died and I didn't see your messages until now.",b:85},
+  {t:"I was already committed to something else that night.",b:88},
+  {t:"I wasn't feeling great and didn't want to cancel last minute, then cancelled last minute.",b:82},
+  {t:"I had a long week and honestly I just needed to recharge.",b:87},
+  {t:"I thought someone else was arranging the plans and dropped the ball.",b:79},
+  {t:"I had an early start the next morning and didn't want to be wrecked.",b:85},
+  {t:"I was in the middle of something I couldn't easily step away from.",b:83},
+  {t:"My parking situation was a nightmare and I gave up.",b:78},
+  {t:"The restaurant had a 2-hour wait and we just wandered until it was too late.",b:82},
+  {t:"I got turned around and ended up in a completely different part of town.",b:79},
+  {t:"There was no parking within 15 minutes of the venue.",b:84},
+  {t:"I'd already made other plans before I saw your invite.",b:88},
+  {t:"I had a last-minute clash I had no control over.",b:84},
+  {t:"I was waiting for someone to confirm they were coming before I committed.",b:80},
+  {t:"My ride cancelled on me at the last second.",b:86},
+  {t:"I didn't see the calendar invite come through.",b:83},
+  {t:"I overcommitted this week and had to make hard choices.",b:85},
+  {t:"I was exhausted from the week and couldn't be good company.",b:88},
+  {t:"I had a miscommunication about the time and showed up to the wrong slot.",b:81},
+  {t:"My plans changed and I genuinely lost track of this one.",b:82},
+  {t:"I had to take a call right as I was about to leave.",b:87},
+  {t:"I thought it was a casual thing and didn't realize it was important to you.",b:79},
+  {t:"I was sorting out something urgent at home before heading out.",b:84},
+  {t:"The event I was at before ran way longer than expected.",b:86},
+  {t:"I left my wallet at home and had to go back.",b:88},
+  {t:"I got caught in a conversation I couldn't politely exit.",b:83},
+  {t:"I wasn't sure I was actually on the list and didn't want to show up uninvited.",b:78},
+  {t:"I had an unexpected visitor who stayed longer than planned.",b:87},
+  {t:"I couldn't find childcare at the last minute.",b:91},
+  {t:"I got a migraine and had to lie down.",b:90},
+  {t:"Something broke at home that I had to sort out before I could leave.",b:86},
+  {t:"I mixed up the address and ended up at the wrong place entirely.",b:82},
+  {t:"My friend needed help with something urgent and I had to step up.",b:89},
+  {t:"I thought it started an hour later than it did.",b:83},
+  {t:"I was stuck in a queue that refused to move.",b:81},
+  {t:"I got distracted helping someone who really needed it.",b:86},
+  {t:"I was mid-task and couldn't stop without losing all my progress.",b:79},
+  {t:"I wasn't sure of the dress code and spent too long figuring it out.",b:74},
+  {t:"My transport app showed a 5-minute wait that turned into 45.",b:87},
+  {t:"I was dealing with a minor emergency that turned into a major one.",b:89},
+  {t:"I completely forgot and I'm genuinely sorry — no excuse, just forgot.",b:92},
+  {t:"I started getting ready and realized I was more tired than I thought.",b:85},
+  {t:"The babysitter cancelled and I had no backup.",b:92},
+  {t:"My dog had a moment and I couldn't leave the house in good conscience.",b:83},
+  {t:"I had a work thing that ran into the evening without warning.",b:88},
+  {t:"I tried to leave three times and kept getting pulled back for 'one more thing'.",b:82},
+  {t:"I got to the venue and realized it was the wrong night.",b:78},
+  {t:"I was finishing something I'd promised someone else and lost the window.",b:83},
+  {t:"The friends I was coming with all bailed and it felt weird to come alone.",b:77},
+  {t:"I was having a rough mental health day and company wasn't what I needed.",b:86},
+  {t:"I had to deal with an urgent text from family before I could be present.",b:85},
+  {t:"My car wouldn't start and alternative transport took too long to arrange.",b:88},
+  {t:"The queue outside was enormous and I couldn't face it.",b:76},
+  {t:"I had a commitment earlier that day that left me with no energy.",b:84},
+  {t:"I thought I'd confirmed but apparently I hadn't.",b:80},
+  {t:"I had a conflict I forgot to check against when I originally said yes.",b:83},
+  {t:"I had every intention of going and then the sofa made a very compelling argument.",b:72},
+  {t:"I overestimated my social battery for the week.",b:85},
+  {t:"I got caught up in a task I couldn't hand off to someone else.",b:82},
+  {t:"My notification for the event never came through.",b:81},
+  {t:"I was sorting out a logistics issue that couldn't be left.",b:83},
+  {t:"I was waiting on important news and couldn't concentrate on anything else.",b:82},
+  {t:"I had promised that evening to someone else months ago.",b:88},
+  {t:"I had a long commute and by the time I arrived home I couldn't turn around again.",b:85},
+  {t:"I was already in my pyjamas by 7 PM, which is a point of no return.",b:78},
+  {t:"I genuinely didn't realize the time zones were different.",b:80},
+  {t:"I lost track of where you said to meet and couldn't reach you.",b:82},
+  {t:"I was at a prior event that got complicated at exactly the wrong moment.",b:84},
+  {t:"My housemate locked me out and the locksmith took two hours.",b:86},
+  {t:"I couldn't arrange a lift and the last bus went at 10.",b:84},
+  {t:"I didn't realize how much I'd committed to this week until it was too late.",b:83},
+  {t:"I was helping a friend move and we massively underestimated how long it would take.",b:87},
+  {t:"I thought it was optional rather than expected — I misread the tone.",b:78},
+  {t:"My partner and I had something to work through that evening.",b:87},
+  {t:"I was finishing up an errand that turned into a full afternoon.",b:82},
+  {t:"The venue was sold out when I tried to get a ticket on the day.",b:83},
+  {t:"I had an acute case of FOMO about staying in.",b:70},
+  {t:"I had a dinner I'd forgotten I'd promised to cook.",b:85},
+  {t:"My internet went down and I couldn't book the tickets in time.",b:83},
+  {t:"There was a family event that I discovered at the last minute took precedence.",b:88},
+  {t:"I fell asleep briefly and woke up an hour after it started.",b:79},
+  {t:"I realized I'd double-booked and had to make a painful choice.",b:85},
+  {t:"I had three other things going on and this one fell off the radar.",b:81},
+  {t:"I wasn't in the right headspace and didn't want to bring the energy down.",b:84},
+  {t:"I was handling something sensitive that I can't really go into detail about.",b:87},
+  {t:"I thought my housemate was coming and when they dropped out I lost motivation.",b:76},
+  {t:"I had unexpected guests I couldn't abandon.",b:87},
+  {t:"I didn't want to drive and the alternatives weren't great.",b:82},
+  {t:"I had a self-imposed deadline I was trying to meet.",b:79},
+  {t:"I was managing a situation that needed a calm head and I couldn't split focus.",b:83},
+  {t:"I tried to get there and everything conspired against me.",b:80},
+  {t:"I completely underestimated the distance.",b:82},
+  {t:"I was waiting on a call that kept getting delayed.",b:81},
+  {t:"I had every intention of going but I needed the evening more than I realized.",b:83},
+  {t:"I lost my keys and by the time I found them it was too late.",b:85},
+],
+family:[
+  {t:"We had a family thing I couldn't get out of.",b:91},
+  {t:"My parents needed help with something and it ended up taking the whole day.",b:89},
+  {t:"There was a family health situation I had to be present for.",b:93},
+  {t:"My sibling called in a crisis and I had to be there.",b:91},
+  {t:"We had an unexpected visit from relatives.",b:87},
+  {t:"The kids were sick and I couldn't leave them.",b:95},
+  {t:"There was a school event I had completely forgotten about.",b:86},
+  {t:"My partner needed me to cover something urgent.",b:89},
+  {t:"The school called and I had to pick up early.",b:93},
+  {t:"We had a family meeting that went long.",b:85},
+  {t:"My elderly parent had a hospital appointment that ran over.",b:94},
+  {t:"The kids had a sports final and I couldn't miss it.",b:92},
+  {t:"My in-laws came to visit without much notice.",b:88},
+  {t:"There was a birthday I had completely miscalculated.",b:83},
+  {t:"The nanny was sick and we had no backup.",b:92},
+  {t:"My nephew had a recital I'd promised to attend months ago.",b:90},
+  {t:"We were dealing with a household situation that needed all hands.",b:86},
+  {t:"My kid had a meltdown right as I was about to leave.",b:90},
+  {t:"I had to take my parent to a specialist appointment.",b:93},
+  {t:"We had a plumbing situation that couldn't wait.",b:88},
+  {t:"My partner was out of town and I had sole responsibility for the kids.",b:92},
+  {t:"There was an anniversary dinner I had promised to be home for.",b:89},
+  {t:"My grandmother called and I just couldn't cut it short.",b:87},
+  {t:"The school run took twice as long due to roadworks.",b:86},
+  {t:"There was a family obligation that had been on the calendar for months.",b:91},
+  {t:"My child's teacher requested an urgent meeting.",b:90},
+  {t:"We were helping a family member move and it took all weekend.",b:89},
+  {t:"I had to sort out a family administrative situation — estate, insurance, that kind of thing.",b:88},
+  {t:"My teenager had a situation I had to be present for.",b:90},
+  {t:"There was a household emergency — boiler, pipe, the usual.",b:87},
+  {t:"My parents were having a disagreement and I had to mediate.",b:83},
+  {t:"We were dealing with a difficult situation involving an elderly relative.",b:92},
+  {t:"The kids had a very specific activity request that somehow consumed the entire day.",b:84},
+  {t:"I had to organize a last-minute family gathering.",b:82},
+  {t:"My child's daycare called to say they were closing early due to a staff shortage.",b:91},
+  {t:"We had a pipe burst and the whole family was managing the fallout.",b:90},
+  {t:"My sibling's car broke down and I was the only one nearby.",b:89},
+  {t:"There was a family dinner I forgot to block on my calendar.",b:84},
+  {t:"My parent's medication needed urgent collection and the pharmacies kept closing.",b:90},
+  {t:"The kids had different activities in opposite directions and I was traffic control.",b:87},
+  {t:"We were house-hunting and an unexpected viewing came up.",b:83},
+  {t:"My spouse had food poisoning and I was on duty all night.",b:92},
+  {t:"I was coordinating a care rota for a family member.",b:89},
+  {t:"The school uniform emergency at 7:45 AM is a certified crisis.",b:88},
+  {t:"My dad insisted on walking me through his new phone settings. It took two hours.",b:82},
+  {t:"My family needed help navigating a bureaucratic form that made no sense.",b:86},
+  {t:"There was a pet emergency that the whole family had to manage.",b:89},
+  {t:"My kid forgot something crucial and I had to drive back to school.",b:87},
+  {t:"We were helping settle a family dispute over logistics that escalated.",b:80},
+  {t:"I was coordinating a surprise that required all of my attention.",b:85},
+  {t:"My child refused to get dressed for 45 minutes and the whole morning collapsed.",b:86},
+  {t:"We had a last-minute family trip that required me to pack and arrange things.",b:84},
+  {t:"My relative had a fall and I was coordinating the family response.",b:92},
+  {t:"There was a will-related discussion that couldn't be postponed.",b:87},
+  {t:"My child had a performance and I promised months ago I wouldn't miss it.",b:93},
+  {t:"My sibling arrived unexpectedly and stayed for the whole weekend.",b:85},
+  {t:"We had a family emergency involving a pet that the children adore.",b:88},
+  {t:"I was sorting care arrangements for a relative being discharged from hospital.",b:91},
+  {t:"My parents needed tech support for something that turned into a 3-hour call.",b:82},
+  {t:"The school called about an incident and I had to go in immediately.",b:92},
+  {t:"We had a power of attorney situation that required my physical presence.",b:89},
+  {t:"My child had a fever overnight and I was up every hour checking on them.",b:92},
+  {t:"There was a family bereavement and I had to step away from everything.",b:96},
+  {t:"We had a milestone anniversary dinner for my parents that I had arranged.",b:90},
+  {t:"My relative needed an emergency passport renewal for travel and I was helping.",b:87},
+  {t:"The childminder gave notice at short notice and I had no alternative.",b:91},
+  {t:"We had a family intervention situation that was unavoidable.",b:88},
+  {t:"My child had night terrors and was with me in bed from 2 AM.",b:90},
+  {t:"I was managing a family member's affairs while they were in hospital.",b:92},
+  {t:"My parent called to say they were lonely and I just couldn't hang up.",b:85},
+  {t:"We had a surprise anniversary party to set up and the timeline got tight.",b:84},
+  {t:"My kid's school project required materials I had to source urgently.",b:83},
+  {t:"The family GP appointment overran and created a domino effect on the day.",b:88},
+  {t:"There was a complicated insurance claim involving my parents' property.",b:85},
+  {t:"My relative came to stay and brought significantly more luggage than expected.",b:78},
+  {t:"I was helping a family member through a significant life decision.",b:87},
+  {t:"My partner needed me to take over an obligation they had a conflict with.",b:86},
+  {t:"We had a home assessment for a family member's care needs.",b:89},
+  {t:"My child had a sports injury that needed an urgent clinic visit.",b:91},
+  {t:"I was assembling flat-pack furniture that the instruction manual made impossible.",b:76},
+  {t:"There was a family photo session booked months ago that I couldn't reschedule.",b:84},
+  {t:"My teenager needed a long and important conversation and I wasn't going to cut it short.",b:89},
+  {t:"My partner and I had a scheduling mixup that left the kids without cover.",b:87},
+  {t:"There was a school play and I was one of the set-building volunteers.",b:83},
+  {t:"I was with a family member who had just received difficult news.",b:93},
+  {t:"My child's medication needed adjusting and the call with the paediatrician took all morning.",b:91},
+  {t:"We had a family legal matter that required signatures and an in-person notary.",b:88},
+  {t:"My relative needed help completing a complex benefits application.",b:89},
+  {t:"I was moderating a tricky family group chat situation that escalated.",b:77},
+  {t:"My child had an allergic reaction and the precautionary protocols took most of the day.",b:92},
+  {t:"We had a household audit for a remortgage that required me to be home.",b:85},
+  {t:"My parent had a driving assessment and I was coordinating the logistics around it.",b:86},
+  {t:"The kids had a disagreement I had to mediate before it scarred them for life.",b:80},
+  {t:"I was arranging a memorial for a family member.",b:94},
+  {t:"My toddler had a temperature and the parenting instinct overrides all scheduling.",b:93},
+  {t:"We had a family legal dispute that needed urgent correspondence.",b:87},
+  {t:"My parent was confused about a bill and it took two hours to resolve.",b:83},
+  {t:"I was helping my teenager prepare for an important job interview.",b:85},
+  {t:"My child won something at school and the celebration ran away with the afternoon.",b:82},
+  {t:"We had a family situation that required me to be physically present, full stop.",b:91},
+],
+health:[
+  {t:"I had a doctor's appointment that ran significantly over time.",b:93},
+  {t:"I wasn't feeling well and needed to rest before I could function.",b:90},
+  {t:"I had a migraine and couldn't look at a screen.",b:91},
+  {t:"I had a medical procedure that required recovery time.",b:94},
+  {t:"I was dealing with a side effect from a new medication.",b:90},
+  {t:"I had a physio appointment that completely wiped my energy.",b:87},
+  {t:"My mental health took a dip and I needed to prioritize it.",b:89},
+  {t:"I had to fast before a blood test and couldn't concentrate until after.",b:88},
+  {t:"I was managing a flare-up of a chronic condition.",b:91},
+  {t:"I had an unexpected allergic reaction and had to take antihistamines.",b:90},
+  {t:"I had a bad night's sleep and was completely non-functional in the morning.",b:88},
+  {t:"I had a dental emergency — toothache that made thinking impossible.",b:91},
+  {t:"I was managing food poisoning for most of the day.",b:92},
+  {t:"I had a therapy appointment that I've had scheduled for months.",b:91},
+  {t:"I was recovering from a vaccination side effect.",b:90},
+  {t:"I had an eye exam and my vision was blurry for hours afterward.",b:89},
+  {t:"I pulled a muscle and movement was genuinely difficult.",b:87},
+  {t:"I had an urgent care visit that took the entire morning.",b:92},
+  {t:"I had vertigo and couldn't safely drive or function normally.",b:90},
+  {t:"I had a specialist appointment that was months out — I couldn't reschedule.",b:93},
+  {t:"I was dealing with a severe cold and chose not to spread it.",b:91},
+  {t:"I had a blood pressure reading that required immediate rest.",b:89},
+  {t:"I had a panic attack and needed time to recover.",b:90},
+  {t:"I had to pick up an urgent prescription before the pharmacy closed.",b:88},
+  {t:"I was experiencing chronic fatigue and pushing through wasn't an option.",b:87},
+  {t:"I had an optometrist fitting that took longer than expected.",b:85},
+  {t:"I was waiting at the walk-in clinic for a situation that couldn't wait.",b:91},
+  {t:"I had a mental health day — not a metaphor, a genuine necessity.",b:86},
+  {t:"I was managing dehydration and the symptoms were severe.",b:87},
+  {t:"I had a chiropractic emergency — my back completely gave out.",b:89},
+  {t:"I had lab results that came in and required an urgent follow-up call.",b:90},
+  {t:"I was recovering from a minor outpatient procedure.",b:93},
+  {t:"I had insomnia for three nights and today was the wall.",b:86},
+  {t:"I had a hearing test that ran over by 90 minutes.",b:84},
+  {t:"I had an episode that concerned me enough to call the nurse line.",b:88},
+  {t:"I had a dermatology appointment that found something that needed to be biopsied.",b:92},
+  {t:"I was recovering from a procedure that required 24 hours of rest.",b:93},
+  {t:"My chronic pain was significantly worse than usual today.",b:88},
+  {t:"I had a neurological check-up that required fasting and rest.",b:90},
+  {t:"I had a respiratory infection that kept me from being useful to anyone.",b:91},
+  {t:"I had a bout of burnout that my therapist told me not to push through.",b:87},
+  {t:"I had a telehealth appointment that ran 45 minutes over the scheduled slot.",b:89},
+  {t:"I was managing a post-travel illness that hit harder than expected.",b:88},
+  {t:"I had an ENT appointment for a recurring issue that finally needed addressing.",b:87},
+  {t:"I had a stress headache that made screen time physically painful.",b:88},
+  {t:"I was experiencing a side effect from a new supplement my doctor recommended.",b:84},
+  {t:"I had a follow-up blood draw that required 2 hours of fasting beforehand.",b:87},
+  {t:"I was at a specialist for a long-standing referral that had taken 6 months to get.",b:91},
+  {t:"I was exhausted from the cumulative sleep debt of the last two weeks.",b:86},
+  {t:"I had an unexpected reaction to something I ate and spent the morning recovering.",b:89},
+  {t:"I had a surgical follow-up that revealed a complication requiring same-day attention.",b:93},
+  {t:"My anxiety was severe enough that I had to cancel and prioritize.",b:87},
+  {t:"I had a rheumatology appointment that took the entire morning.",b:88},
+  {t:"I was recovering from a concussion and screens were not permitted.",b:92},
+  {t:"I had a cardiology check-up that required a stress test I hadn't anticipated.",b:91},
+  {t:"I had a severe bout of nausea that came on without warning.",b:89},
+  {t:"My doctor changed my medication and the adjustment period was difficult.",b:88},
+  {t:"I had a podiatry appointment for something that had been getting progressively worse.",b:84},
+  {t:"I had a scheduled colonoscopy with a 24-hour prep that took priority.",b:93},
+  {t:"I had a complex injury rehabilitation session that went long.",b:86},
+  {t:"I was waiting for emergency prescription delivery and couldn't leave the house.",b:88},
+  {t:"I had an autoimmune flare that required rest and medication adjustment.",b:90},
+  {t:"I had a dietitian appointment that turned into a full nutritional overhaul session.",b:82},
+  {t:"I was dizzy all morning — not metaphorically, literally couldn't stand up.",b:88},
+  {t:"I had a psychiatric review that was sensitive and couldn't be rushed.",b:91},
+  {t:"I had a fertility appointment that was time-sensitive by definition.",b:92},
+  {t:"My wisdom tooth gave me no choice but to go to the emergency dentist.",b:91},
+  {t:"I had an MRI scan and the wait time was longer than the appointment itself.",b:89},
+  {t:"I had a post-operative check that required blood work and imaging.",b:90},
+  {t:"I was in A&E for most of the morning for a situation that couldn't wait.",b:93},
+  {t:"I had a sleep study referral appointment that I'd waited months for.",b:87},
+  {t:"I had an unexplained symptom that my GP wanted to investigate urgently.",b:90},
+  {t:"I was managing a stomach bug with enough dignity to stay home.",b:89},
+  {t:"I had a musculoskeletal assessment that required me to do nothing strenuous after.",b:84},
+  {t:"I had a severe muscle spasm that made sitting at a desk completely impossible.",b:88},
+  {t:"I had a hospital pre-admission appointment for a planned procedure.",b:91},
+  {t:"My fatigue was at a level where I was a liability rather than an asset.",b:86},
+  {t:"I had a cognitive assessment that was mentally exhausting in a literal clinical sense.",b:88},
+  {t:"I had a physiotherapy home visit that the therapist scheduled without checking my diary.",b:83},
+  {t:"I was waiting on urgent test results and couldn't concentrate on anything else.",b:88},
+  {t:"I had a GP appointment that turned into an extended consultation.",b:89},
+  {t:"I was managing an infection and was told to stay warm and rest.",b:90},
+  {t:"I had a long-haul vaccination appointment at a travel clinic before my trip.",b:85},
+  {t:"I had to attend a specialist clinic for a referral that took 9 months to come through.",b:91},
+  {t:"I had a severe bout of hayfever that made everything difficult.",b:84},
+  {t:"I had a mental health crisis assessment appointment that needed to happen.",b:92},
+  {t:"I was recovering from general anaesthetic and wasn't fit to do much.",b:94},
+  {t:"I had a skin biopsy that left me needing rest and monitoring.",b:88},
+  {t:"I had a vision problem that made reading and driving unsafe.",b:90},
+  {t:"I had a pain management appointment that included a procedure.",b:88},
+  {t:"I had a urology appointment for something I'd been putting off too long.",b:86},
+  {t:"I had an acute ear infection that made sound, movement, and functioning difficult.",b:89},
+  {t:"My blood sugar was erratic all day and I had to manage that carefully.",b:88},
+  {t:"I had a gynaecology appointment that was both necessary and draining.",b:89},
+  {t:"I had a significant anxiety episode that required professional intervention.",b:90},
+  {t:"I was waiting on a referral decision that would affect everything else.",b:85},
+  {t:"I had an occupational health assessment that was mandatory before returning to work.",b:88},
+  {t:"I had a complex wound that needed dressing by a nurse at the clinic.",b:87},
+],
+tech:[
+  {t:"My internet went out and my ISP said the estimated fix was 'sometime today'.",b:89},
+  {t:"My phone died and I couldn't reach anyone until I found a charger.",b:88},
+  {t:"The app crashed and ate all my progress.",b:83},
+  {t:"My cloud sync failed and I lost my latest changes.",b:81},
+  {t:"I was locked out of my account and 2FA was going to a number I no longer have.",b:85},
+  {t:"My smart home device went haywire and I spent an hour resetting everything.",b:72},
+  {t:"The website was down when I tried to submit.",b:84},
+  {t:"My computer decided to run a 2-hour update at the worst possible time.",b:92},
+  {t:"I accidentally deleted the file and the trash was already emptied.",b:79},
+  {t:"My password manager stopped working and I couldn't log in to anything.",b:83},
+  {t:"The Bluetooth on everything decided to stop cooperating simultaneously.",b:78},
+  {t:"My browser had 300 tabs open and crashed under the weight of them.",b:80},
+  {t:"The form timed out right before I hit submit.",b:86},
+  {t:"My email attachment was too large and the bounce message went to spam.",b:82},
+  {t:"My phone screen cracked and I couldn't read the relevant notification.",b:85},
+  {t:"The autocorrect changed something critical and I didn't notice until too late.",b:83},
+  {t:"My Wi-Fi router needed a firmware update that caused a 3-hour outage.",b:80},
+  {t:"My VPN routing broke and I couldn't access the tools I needed.",b:82},
+  {t:"The software required a version I didn't have and the download took 45 minutes.",b:84},
+  {t:"My external hard drive unmounted itself mid-transfer.",b:78},
+  {t:"I got a phishing email that I reported and then spent an hour on a security call.",b:82},
+  {t:"The API I was relying on hit its rate limit.",b:79},
+  {t:"My laptop fan started screaming and I was afraid to run it.",b:76},
+  {t:"The screen recording corrupted at minute 47 of 50.",b:78},
+  {t:"My smart TV updated and reset all my settings, including the meeting app.",b:74},
+  {t:"I was hacked and had to do an emergency credential rotation.",b:88},
+  {t:"The data portal required a plugin that only works on Internet Explorer.",b:75},
+  {t:"My microphone stopped working mid-call and no one could hear me for 10 minutes.",b:87},
+  {t:"The video conferencing app updated and moved every button to a new location.",b:85},
+  {t:"My laptop overheated and went into thermal shutdown during the presentation.",b:82},
+  {t:"The file format wasn't compatible and conversion kept corrupting the content.",b:80},
+  {t:"My cloud storage hit its limit and refused to sync new files.",b:83},
+  {t:"I was debugging a script that was supposed to take 10 minutes.",b:81},
+  {t:"The certificate on the site expired and my browser blocked access.",b:79},
+  {t:"My phone kept restarting in a loop and I couldn't get it to stop.",b:84},
+  {t:"The download speed was 0.3 Mbps and the file was 4 GB.",b:83},
+  {t:"I was locked out of the shared drive because permissions were changed.",b:82},
+  {t:"My wireless keyboard ran out of battery during a document I couldn't save.",b:80},
+  {t:"The browser extension I needed was removed from the store.",b:75},
+  {t:"My USB-C hub stopped working and I had no way to connect to anything.",b:81},
+  {t:"The server was in maintenance mode for 6 hours without prior notice.",b:84},
+  {t:"My screen mirroring refused to work no matter what combination I tried.",b:78},
+  {t:"The internet router was fine but DNS was having a global bad day.",b:79},
+  {t:"My laptop touchpad had a driver issue and I don't carry a mouse.",b:80},
+  {t:"The entire folder structure got reorganized by an overnight backup script.",b:77},
+  {t:"I was in a 3-hour session trying to merge conflicting code branches.",b:82},
+  {t:"My headphones connected to my laptop instead of my phone and I didn't notice.",b:83},
+  {t:"The video call kept freezing because someone on the call was also screen recording.",b:81},
+  {t:"I had to factory reset my phone after it became completely unresponsive.",b:85},
+  {t:"My task scheduler ran the wrong job and deleted logs I needed.",b:78},
+  {t:"My SSD made an unusual noise and I had to stop using it immediately.",b:84},
+  {t:"The company MDM software pushed a policy that broke my local tools.",b:80},
+  {t:"My GitHub access was revoked during a permissions audit and I couldn't push anything.",b:79},
+  {t:"The deployment environment was misconfigured and no one could reproduce the bug.",b:81},
+  {t:"My email client sent a draft reply before I'd finished writing it.",b:82},
+  {t:"The two-factor authentication token expired during login and I had to start over.",b:83},
+  {t:"My entire development environment needed rebuilding after a bad package install.",b:79},
+  {t:"The scheduled export job ran and produced an empty file with no error message.",b:78},
+  {t:"The remote desktop session timed out at exactly the wrong moment.",b:82},
+  {t:"My ISP throttled my connection during peak hours and video calls were unusable.",b:84},
+  {t:"The NAS drive on the home network went into sleep mode and corrupted a transfer.",b:77},
+  {t:"My SSH keys were rotated company-wide without individual notice.",b:80},
+  {t:"The IDE plugin I depend on had a breaking update released overnight.",b:79},
+  {t:"My camera failed during a recorded presentation and the backup had no audio.",b:82},
+  {t:"The authentication service had a 90-minute outage during core working hours.",b:85},
+  {t:"My meeting link was for the wrong region's data centre and the call had 4-second lag.",b:80},
+  {t:"I had a ransomware warning that turned out to be a false positive after 2 hours.",b:83},
+  {t:"My screen reader stopped working after an OS update.",b:81},
+  {t:"The internet filter at the venue blocked every tool I needed.",b:79},
+  {t:"My keyboard layout switched to a different language mid-document.",b:77},
+  {t:"The calendar app double-booked itself across two time zones.",b:82},
+  {t:"My work device enrolled in a new MDM profile that reset all my preferences.",b:80},
+  {t:"The shared spreadsheet had circular references that broke the entire model.",b:79},
+  {t:"My charging cable shorted and my laptop was at 3% with no spare.",b:84},
+  {t:"The Slack integration with my project tool stopped syncing.",b:78},
+  {t:"My microphone settings reset after every reboot and I kept joining calls muted.",b:83},
+  {t:"The corporate proxy blocked the documentation site I was relying on.",b:79},
+  {t:"My machine hit its RAM ceiling and became unusable for 40 minutes.",b:81},
+  {t:"The file I was sent was password protected and no one knew the password.",b:80},
+  {t:"The digital signature tool wouldn't accept my certificate for the contract.",b:82},
+  {t:"My broadband provider had a regional outage that wasn't on their status page.",b:84},
+  {t:"The conference room AV setup refused to work with my laptop's adaptor.",b:83},
+  {t:"My notification system went silent and I had no idea what was happening.",b:79},
+  {t:"The Docker containers wouldn't start and the logs were completely uninformative.",b:78},
+  {t:"I had a kernel panic that required a full system restore.",b:83},
+  {t:"My phone's SIM card stopped being recognized after an update.",b:81},
+  {t:"I received a data breach notification and had to change 40 passwords.",b:86},
+  {t:"The cloud function timed out on a payload that worked fine in testing.",b:79},
+  {t:"My app kept crashing on the one device the demo was scheduled on.",b:82},
+  {t:"The API documentation was outdated and the actual behavior was completely different.",b:78},
+  {t:"My development database was accidentally wiped by a colleague's migration script.",b:81},
+  {t:"The video conferencing platform had a region-wide outage with no ETA.",b:84},
+  {t:"My operating system couldn't find the printer that was working yesterday.",b:80},
+  {t:"The JavaScript bundle refused to build and the error message was three words.",b:79},
+  {t:"My phone hotspot kept dropping the connection every 8 minutes.",b:83},
+  {t:"I accidentally ran a command that took down a shared staging environment.",b:80},
+  {t:"The browser cached an old version and I was debugging a problem that didn't exist.",b:82},
+  {t:"My smart display started playing someone else's calendar out loud.",b:73},
+  {t:"The network certificate update blocked all internal sites without warning.",b:81},
+  {t:"My laptop's cooling system failed and it throttled to 10% performance.",b:82},
+],
+traffic:[
+  {t:"There was an accident on the motorway and traffic was completely stopped.",b:93},
+  {t:"Google Maps rerouted me three times and added 40 minutes to my trip.",b:88},
+  {t:"There was roadworks that weren't there yesterday and no one was warned.",b:90},
+  {t:"The train was delayed due to a signal failure.",b:92},
+  {t:"My bus didn't show up and the next one was 35 minutes away.",b:91},
+  {t:"There was a protest that blocked three of the main roads into the city.",b:89},
+  {t:"I couldn't find parking within a reasonable distance.",b:85},
+  {t:"A lorry shed its load and shut down the main road.",b:90},
+  {t:"My car wouldn't start and I had to wait for roadside assistance.",b:93},
+  {t:"The tube line I needed was suspended for engineering works.",b:91},
+  {t:"There was a traffic diversion in place that added 6 miles to my route.",b:88},
+  {t:"My taxi app showed 5 minutes and then just kept increasing.",b:87},
+  {t:"The pedestrian crossing was out of order and traffic was manually controlled.",b:83},
+  {t:"I missed my connection and the next one wasn't for an hour.",b:90},
+  {t:"The car park was full and I spent 20 minutes looking for street parking.",b:86},
+  {t:"My sat nav lost signal and I was left to navigate by instinct.",b:81},
+  {t:"There was a speed camera van positioned to slow down the entire carriageway.",b:84},
+  {t:"My tyre was flat when I got to the car.",b:92},
+  {t:"There was a level crossing stuck in the down position for 30 minutes.",b:88},
+  {t:"The motorway smart sign said 40mph for the entire 18-mile stretch.",b:87},
+  {t:"There was an event at the arena that paralysed the surrounding area.",b:89},
+  {t:"My car ran out of fuel because the gauge is broken.",b:83},
+  {t:"The rail replacement bus service was slower than walking.",b:88},
+  {t:"There was a burst water main and the entire road was closed.",b:91},
+  {t:"My windscreen frosted up and the de-icer was empty.",b:89},
+  {t:"I got caught behind a very slow tractor for 11 miles with no overtaking option.",b:87},
+  {t:"The bus driver went on break mid-route and we all had to wait.",b:85},
+  {t:"My sat nav directed me to a road that no longer exists.",b:81},
+  {t:"There was a police incident that shut down the area entirely.",b:92},
+  {t:"My electric car ran low and the nearest charger had a 40-minute queue.",b:85},
+  {t:"I went to the wrong terminal at the airport.",b:84},
+  {t:"The school run traffic was catastrophic this morning.",b:88},
+  {t:"My ferry was delayed due to weather conditions.",b:89},
+  {t:"I was in the wrong lane and couldn't get across in time.",b:82},
+  {t:"The parking meter was broken and I had to find an alternative.",b:84},
+  {t:"There was a road race happening and 8 streets were closed.",b:88},
+  {t:"My vehicle was blocked in by a delivery lorry for 25 minutes.",b:87},
+  {t:"The bridge I use every day was suddenly weight-restricted.",b:83},
+  {t:"I had a minor scrape in the car park and had to exchange details.",b:89},
+  {t:"There was dense fog and the motorway was limited to 40mph the entire way.",b:90},
+  {t:"My electric scooter ran out of charge half a mile from the destination.",b:82},
+  {t:"The one-way system changed overnight and I didn't know.",b:83},
+  {t:"I was behind a learner driver for the entire length of the A-road.",b:86},
+  {t:"The multi-storey car park barriers weren't accepting payment.",b:85},
+  {t:"There was an unexpected diversion that added 25 minutes to my route.",b:89},
+  {t:"My child left something essential in the car and I had to go back.",b:87},
+  {t:"There was a cycle event blocking the town centre.",b:84},
+  {t:"My car door froze shut and I had to enter from the other side.",b:82},
+  {t:"The train was overcrowded and didn't stop at my station.",b:88},
+  {t:"I was stuck behind a bin lorry that stopped at every single house.",b:87},
+  {t:"A broken-down vehicle in the outside lane caused a 45-minute queue.",b:90},
+  {t:"The traffic lights at the main junction were out and it was every driver for themselves.",b:88},
+  {t:"I had to pull over because the warning light came on and I wasn't going to risk it.",b:89},
+  {t:"The diversion route was itself diverted and I was going in circles.",b:83},
+  {t:"My Citymapper directions were correct but the road was physically closed.",b:84},
+  {t:"The pedestrian crossing button was broken and the light never changed.",b:80},
+  {t:"The lane was closed for resurfacing with no end in sight.",b:86},
+  {t:"I made a wrong turn and there was nowhere to turn around for 3 miles.",b:83},
+  {t:"A car ahead of me broke down in a tunnel and it blocked everything.",b:89},
+  {t:"The station was evacuated due to an unattended bag and we all stood outside for an hour.",b:91},
+  {t:"My car registration came up on a roadside check and I had to pull over.",b:84},
+  {t:"A cyclist weaving through traffic caused a chain reaction that stopped everything.",b:82},
+  {t:"The bus stop had no information and the next bus was 55 minutes away.",b:85},
+  {t:"The road was down to one lane for resurfacing with poorly managed alternating traffic.",b:86},
+  {t:"My car air conditioning failed and the heat made driving unsafe.",b:82},
+  {t:"The toll booth cash lanes were closed and the card reader wasn't working.",b:84},
+  {t:"The train platform was changed with 4 minutes' notice and I missed it.",b:88},
+  {t:"I had to stop for a lengthy motorway breakdown that blocked the hard shoulder.",b:86},
+  {t:"A lorry had jackknifed on the roundabout and officers were manually directing traffic.",b:90},
+  {t:"The rail strike that was announced last week made my usual route impossible.",b:89},
+  {t:"I underestimated how long the airport drop-off queue would take.",b:83},
+  {t:"There was a marathon course that wasn't on any of the apps.",b:87},
+  {t:"The car wash flooded its own forecourt and I couldn't get through.",b:77},
+  {t:"I had a wheel clamp I wasn't expecting and had to call to have it removed.",b:84},
+  {t:"My digital car key app stopped working and I was locked out of my own vehicle.",b:82},
+  {t:"The bus I was on broke down and we waited 30 minutes for the relief bus.",b:88},
+  {t:"The river bridge had a height restriction I didn't know about.",b:81},
+  {t:"The tram network had a complete suspension I only found out about at the stop.",b:87},
+  {t:"A temporary traffic management system was so badly signed I didn't know where to go.",b:83},
+  {t:"The car park ticket machine only accepted coins and I had none.",b:82},
+  {t:"I had to stop to help a stranded motorist and it felt impossible to drive past.",b:84},
+  {t:"The taxi driver took a route I didn't question until it added 20 minutes.",b:81},
+  {t:"The park-and-ride bus was not running due to driver shortage.",b:85},
+  {t:"I was caught in a contraflow that went on for 6 miles.",b:86},
+  {t:"My car's engine management light came on and I had to find a garage.",b:88},
+  {t:"The traffic was so bad I genuinely considered abandoning the car.",b:82},
+  {t:"My autopay for the toll didn't process and I had to pull over and pay manually.",b:83},
+  {t:"The school crossing patrol extended the wait because the lollipop broke.",b:78},
+  {t:"My phone mount fell off and I had to pull over to retrieve it safely.",b:84},
+  {t:"I took the scenic route by accident and added 8 miles.",b:82},
+  {t:"The bridge was closed for inspection and the next crossing was 12 miles away.",b:86},
+  {t:"I got a flat tyre on a road with no safe stopping point for half a mile.",b:88},
+  {t:"The car hire drop-off queue was 40 minutes long.",b:83},
+  {t:"I drove into a low-traffic zone I wasn't aware of and had to retrace 15 minutes.",b:82},
+  {t:"The motorway services had no fuel and I had to find an alternative.",b:83},
+  {t:"My tyre pressure warning came on and I had to stop to check before it was safe to continue.",b:86},
+  {t:"The bus was skipping alternate stops due to running late, including mine.",b:84},
+  {t:"There was a gas leak near the main junction and the whole area was cordoned off.",b:91},
+  {t:"I went the right way but the road had been made one-way while I was en route.",b:83},
+],
+weather:[
+  {t:"There was severe fog and driving was genuinely dangerous.",b:91},
+  {t:"The snow came overnight and none of the roads had been gritted.",b:92},
+  {t:"The flooding closed the main road I use every day.",b:91},
+  {t:"There was a weather warning and I was advised not to travel.",b:90},
+  {t:"A storm brought a tree down across my usual route.",b:90},
+  {t:"The ice was so bad I couldn't safely walk to the car.",b:89},
+  {t:"The high winds were causing visibility and safety issues on the roads.",b:88},
+  {t:"There was a hailstorm that came out of nowhere and was genuinely terrifying.",b:86},
+  {t:"Lightning struck near a substation and took out the power for hours.",b:90},
+  {t:"The rain was so heavy the drains couldn't keep up and the roads were flooded.",b:90},
+  {t:"There was a yellow weather warning issued and I decided to work from home.",b:88},
+  {t:"My heating system packed up in -5°C and I had to get it sorted.",b:89},
+  {t:"The snow drifts blocked the side road completely.",b:88},
+  {t:"There was a wildfire in the area and smoke was making driving difficult.",b:87},
+  {t:"An extreme heat warning meant the trains were running at reduced speed.",b:87},
+  {t:"The storm knocked out my internet and I had no way to work.",b:89},
+  {t:"The extreme cold drained my car battery completely.",b:88},
+  {t:"Gale force winds knocked the fence down and I had to secure it before leaving.",b:84},
+  {t:"There was a tornado watch and I stayed indoors as advised.",b:90},
+  {t:"A heatwave caused the train tracks to buckle and services were severely disrupted.",b:87},
+  {t:"The fog was so dense I couldn't see the end of my driveway.",b:87},
+  {t:"I was caught in a downpour without a coat and had to wait it out.",b:83},
+  {t:"There was a red weather warning in my area.",b:92},
+  {t:"The ground was waterlogged and I couldn't get my car off the grass.",b:82},
+  {t:"There was a freak hailstorm that dented three cars and blocked traffic.",b:86},
+  {t:"A power cut caused by the storm meant no traffic lights were operational.",b:91},
+  {t:"My outdoor plans got moved and everything reshuffled as a result.",b:82},
+  {t:"The wind blew the wheelie bins across the road and blocked the lane.",b:83},
+  {t:"There was ice on the pedestrian bridge and I had to take a 20-minute detour.",b:87},
+  {t:"The weather app said clear skies — the weather app was wrong.",b:85},
+  {t:"There was a storm surge warning and my area was under an evacuation advisory.",b:91},
+  {t:"The heavy snow meant the buses were running on a Sunday timetable on a Wednesday.",b:88},
+  {t:"There were fallen branches on every shortcut I tried.",b:85},
+  {t:"A cold snap froze my outside pipes and I had to deal with it immediately.",b:87},
+  {t:"The fog delay at the airport created a knock-on that affected the entire day.",b:89},
+  {t:"The pavements were so icy that I walked at approximately 0.4 mph.",b:83},
+  {t:"There was a brown out due to the heat and my devices all lost power.",b:86},
+  {t:"The weather disrupted deliveries and something I was waiting for didn't arrive.",b:82},
+  {t:"My umbrella broke in the wind and it was raining sideways.",b:84},
+  {t:"A weather event closed the schools and I had to manage unexpected childcare.",b:92},
+  {t:"The storm made the parking area a swamp and I couldn't get my car out.",b:85},
+  {t:"There was a flash flood warning and the underpass I use was closed.",b:90},
+  {t:"The extreme heat caused my laptop to overheat and shut down.",b:83},
+  {t:"A power cut caused by the storm meant I lost my work and had to redo it.",b:87},
+  {t:"The road was closed due to storm damage from the previous night.",b:89},
+  {t:"I lost internet for 8 hours due to the storm and couldn't work.",b:88},
+  {t:"There was a weather delay at every connection point on my route.",b:87},
+  {t:"It was so cold the door lock on my car froze solid.",b:86},
+  {t:"A heat advisory meant the outdoor venue was closed for safety reasons.",b:88},
+  {t:"The weather conditions made the journey unsafe and I made the responsible choice.",b:90},
+  {t:"The sand storm reduced visibility to almost zero on the main road.",b:88},
+  {t:"A severe frost warning prompted the council to close several rural roads.",b:87},
+  {t:"The storm damaged my guttering and I had to arrange emergency repairs.",b:84},
+  {t:"A lightning strike took out the local cell tower and I had no phone signal.",b:86},
+  {t:"The heatwave caused the outdoor event to be cancelled, restructuring the whole day.",b:83},
+  {t:"There was a blizzard warning and I followed government guidance to stay home.",b:91},
+  {t:"The high winds were too strong for the overhead lines and trains were suspended.",b:89},
+  {t:"A coastal storm caused a tidal surge that closed roads in the lower town.",b:88},
+  {t:"The temperature drop overnight meant black ice on every surface.",b:90},
+  {t:"I had to wait out a severe thunderstorm before it was safe to get on the road.",b:89},
+  {t:"The tropical storm brought down a tree that blocked my entire street.",b:89},
+  {t:"The heat buckled the railway lines and services were running at 20-minute intervals.",b:87},
+  {t:"The thunderstorm took out power to a large chunk of the commuter rail network.",b:89},
+  {t:"An unexpected cold front brought snow that wasn't forecast until the following week.",b:88},
+  {t:"The weather station issued a severe wind advisory and I decided not to drive.",b:87},
+  {t:"The outdoor event I was attending was cancelled mid-afternoon due to lightning risk.",b:85},
+  {t:"The extreme cold froze the fuel line on my older car.",b:84},
+  {t:"An amber weather warning was upgraded to red while I was mid-journey.",b:91},
+  {t:"There was a prolonged power outage from storm damage and I couldn't work.",b:88},
+  {t:"The gusty conditions made cycling genuinely dangerous.",b:83},
+  {t:"A waterspout formed offshore and the coastal route was closed by police.",b:87},
+  {t:"The fog at the airport meant my connecting flight was held on the ground.",b:89},
+  {t:"The ice storm had encased my car and it took an hour to make it driveable.",b:88},
+  {t:"It rained so hard the windscreen wipers couldn't keep up.",b:86},
+  {t:"An unexpected snowfall during rush hour created complete gridlock.",b:90},
+  {t:"The weather advisory recommended avoiding all non-essential travel.",b:91},
+  {t:"A fallen telegraph pole blocked the only road in and out of my area.",b:89},
+  {t:"The storm caused a landslip on the main route through the valley.",b:88},
+  {t:"I was sheltering from a storm when a flash flood cut off the path home.",b:87},
+  {t:"The sleet made the outdoor stairs unsafe and I had to wait for gritting.",b:84},
+  {t:"Fog patches made the motorway dangerous enough that I pulled off and waited.",b:87},
+  {t:"The overnight freeze burst a radiator valve and I had to call an emergency plumber.",b:88},
+  {t:"A severe weather alert was issued mid-morning and I stopped travelling immediately.",b:90},
+  {t:"The storm knocked out the signal at the railway junction and trains were suspended.",b:89},
+  {t:"I had to clear the driveway of snow before I could even consider leaving.",b:86},
+  {t:"The thunderstorm was severe enough that the school issued an early closure notice.",b:88},
+  {t:"The rain had been so heavy overnight that my basement flooded and needed attention.",b:87},
+  {t:"The wind gusts were so strong the motorway had a ban on high-sided vehicles.",b:88},
+  {t:"A freezing rain event made every surface treacherous for several hours.",b:90},
+  {t:"The storm surge blocked the main road with seawater for most of the morning.",b:88},
+  {t:"The combination of rain and fog made visibility near zero for two hours.",b:89},
+  {t:"The council issued a warning to stay off the roads and I took it seriously.",b:90},
+  {t:"Hailstones the size of marbles were coming down and driving wasn't an option.",b:87},
+  {t:"The roads were closed by the emergency services due to weather-related incidents.",b:91},
+  {t:"A severe gust blew debris into the road that took hours to clear.",b:86},
+  {t:"The heat was so intense that my phone overheated and shut down.",b:82},
+  {t:"The storm rolled in faster than forecast and I was caught in it.",b:86},
+  {t:"There was a weather-related power cut that I had no way to work around.",b:88},
+  {t:"The snow fell continuously for 6 hours and there was no point trying to go anywhere.",b:90},
+],
+pets:[
+  {t:"My dog ate something he absolutely should not have and I had to call the vet.",b:90},
+  {t:"My cat knocked an entire glass of water onto my laptop.",b:87},
+  {t:"My dog escaped the garden and I spent two hours searching the neighbourhood.",b:91},
+  {t:"My pet had a vet appointment that ran over by an hour and a half.",b:89},
+  {t:"My dog decided this morning was the morning to be absolutely inconsolable.",b:83},
+  {t:"My cat woke me up at 3 AM and I never properly got back to sleep.",b:85},
+  {t:"My dog refused to get into the car and I couldn't leave without sorting it.",b:80},
+  {t:"My pet had an unexpected illness that needed same-day attention.",b:91},
+  {t:"My rabbit escaped from its enclosure and reorganized the living room.",b:74},
+  {t:"My dog had a panic attack during a thunderstorm and couldn't be left alone.",b:88},
+  {t:"My cat sat directly on my keyboard and submitted something half-finished.",b:81},
+  {t:"My dog needed emergency surgery and I was at the vet all morning.",b:93},
+  {t:"My fish tank had a crisis — filter failure, the whole thing.",b:72},
+  {t:"My dog managed to get into the compost and needed monitoring.",b:84},
+  {t:"My pet's medication had to be collected before the pharmacy closed.",b:89},
+  {t:"My dog had a grooming appointment that I accidentally scheduled for today.",b:83},
+  {t:"My cat brought something in and the aftermath required significant cleanup.",b:80},
+  {t:"My dog ate my charger cable. All of it.",b:82},
+  {t:"My parrot learned a new phrase at 5 AM and repeated it until I got up.",b:76},
+  {t:"My elderly dog had a bad night and I was up caring for her.",b:91},
+  {t:"My cat had kittens overnight — unexpected, overwhelming, wonderful.",b:88},
+  {t:"My dog got into a confrontation with a fox and I had to intervene.",b:84},
+  {t:"My pet's microchip appointment was rescheduled to today.",b:82},
+  {t:"My dog rolled in something unidentifiable and had to be bathed before anything else.",b:83},
+  {t:"My hamster escaped at midnight and the search lasted until morning.",b:80},
+  {t:"My dog ate an entire loaf of bread and needed close monitoring.",b:82},
+  {t:"My cat had a standoff with her reflection and refused to move from the doorway.",b:71},
+  {t:"My dog needed a post-op check-up that wasn't in the original schedule.",b:89},
+  {t:"My pet sitter cancelled and I had no backup.",b:88},
+  {t:"My cat got into the pantry and I had to audit everything she may have eaten.",b:79},
+  {t:"My dog's insurance claim required a vet phone call that took most of the morning.",b:84},
+  {t:"My tortoise went missing indoors and it took three hours to find her.",b:78},
+  {t:"My dog limped on the morning walk and the vet said to bring him straight in.",b:91},
+  {t:"My cat decided the important meeting I was in was an ideal time to meow continuously.",b:82},
+  {t:"My dog's separation anxiety was severe today and I couldn't leave.",b:85},
+  {t:"My pet had a reaction to a new food I introduced.",b:88},
+  {t:"My puppy destroyed something valuable in the 4 minutes I was out of the room.",b:82},
+  {t:"My dog had her first fireworks experience and it was harrowing for everyone.",b:87},
+  {t:"My cat required an emergency dental procedure.",b:90},
+  {t:"My guinea pig needed an unexpected trip to an exotic animal vet.",b:84},
+  {t:"My dog managed to chew through his lead mid-walk.",b:81},
+  {t:"My cat's fur got matted and the groomer said it was an emergency visit.",b:83},
+  {t:"My pet bird had a health scare that needed a specialist.",b:87},
+  {t:"My dog swallowed a sock and the vet said to monitor him closely.",b:88},
+  {t:"My cat sat on my face at 4 AM with a sense of absolute urgency.",b:80},
+  {t:"My dog got into a scrap with the neighbour's dog and needed a wound cleaned.",b:87},
+  {t:"My ferret escaped through a gap I didn't know existed.",b:79},
+  {t:"My dog chased a squirrel into a hedge and took 20 minutes to extract.",b:80},
+  {t:"My pet refused to eat for two days and today was the vet visit.",b:88},
+  {t:"My cat knocked my phone off the nightstand and it shattered.",b:84},
+  {t:"My dog got into the bin and spread its contents across the kitchen floor.",b:81},
+  {t:"My cat brought in a live bird and the rescue operation took 30 minutes.",b:80},
+  {t:"My dog had a seizure and I rushed him to the emergency vet.",b:93},
+  {t:"My cat disappeared for 12 hours and I couldn't concentrate on anything else.",b:85},
+  {t:"My dog ingested something toxic and I had to call the poison control line for pets.",b:91},
+  {t:"My parrot bit through my laptop charger cable and we had a situation.",b:79},
+  {t:"My dog ate my glasses and without them I genuinely cannot function.",b:83},
+  {t:"My cat chose my keyboard as a napping spot and I couldn't get her to move.",b:78},
+  {t:"My dog's dental appointment ran long and he was groggy all afternoon.",b:82},
+  {t:"My pet had a reaction to a new flea treatment and needed immediate attention.",b:88},
+  {t:"My dog barked continuously at something invisible for two hours.",b:76},
+  {t:"My cat locked me out of my bedroom by sitting against the door handle.",b:72},
+  {t:"My dog's GPS collar battery died and I had to find him the old-fashioned way.",b:80},
+  {t:"My pet's routine vaccination appointment turned into a full examination.",b:85},
+  {t:"My dog has a thunder jacket for storms but somehow escaped from it during the night.",b:79},
+  {t:"My cat shredded the important documents I left on the desk.",b:76},
+  {t:"My dog ate the post before I could retrieve it.",b:78},
+  {t:"My guinea pigs had babies and the morning became something else entirely.",b:82},
+  {t:"My cat was limping and I wasn't prepared to ignore it.",b:89},
+  {t:"My dog found a wasp nest and the subsequent chaos consumed the morning.",b:84},
+  {t:"My pet chameleon turned a colour that meant a vet visit was advisable.",b:79},
+  {t:"My dog bit through the internet cable and connectivity was gone.",b:82},
+  {t:"My cat blocked the entrance to the litter tray and staged a sit-in.",b:71},
+  {t:"My dog developed an attachment to a specific sock and would not release it.",b:73},
+  {t:"My cat pushed a plant off the windowsill and the cleanup was non-trivial.",b:77},
+  {t:"My dog's anxiety around strangers made the delivery situation impossible to manage.",b:81},
+  {t:"My pet's boarding kennel called to say they were at capacity and I had to find an alternative.",b:86},
+  {t:"My cat sat on the router and I only discovered why the internet was slow after 40 minutes.",b:79},
+  {t:"My dog developed hiccups that lasted an hour and I became genuinely concerned.",b:74},
+  {t:"My pet needed emergency boarding while I dealt with an unexpected situation.",b:85},
+  {t:"My cat's flea treatment hadn't worked and I had to treat the entire house.",b:84},
+  {t:"My dog ran through a mud patch and required a full emergency bath.",b:80},
+  {t:"My pet became unresponsive and I drove to the 24-hour animal hospital.",b:92},
+  {t:"My cat knocked the electric toothbrush on and it wouldn't stop for 20 minutes.",b:71},
+  {t:"My dog got into the garden compost and the vet said to monitor for 24 hours.",b:83},
+  {t:"My pet needed a specialist behavioural consultation today.",b:82},
+  {t:"My cat sat on the panic button on my alarm system and I had to wait for the response team.",b:80},
+  {t:"My dog's identification tag fell off and I spent an hour finding a new one before he could go out.",b:79},
+  {t:"My goldfish developed swim bladder issues and I did more research than I expected.",b:71},
+  {t:"My cat's microchip needed re-registering because we moved and the form was extensive.",b:78},
+  {t:"My dog ate a bee and his face swelled up on one side — vet trip immediately.",b:88},
+  {t:"My cat knocked the boiling kettle off the counter and there was a cleanup situation.",b:82},
+  {t:"My pet escape artist had a very successful morning while I was on a call.",b:79},
+  {t:"My dog's medication schedule changed and I had to reorganize my entire morning around it.",b:82},
+  {t:"My cat jumped onto the fuse box and tripped the switch at the worst possible moment.",b:79},
+  {t:"My dog ate my reading glasses, my phone charger, and my patience — in that order.",b:80},
+  {t:"My pet required a second opinion at a different clinic and the day was gone.",b:85},
+  {t:"My cat chose the exact moment I was about to leave to need an emergency grooming intervention.",b:77},
+],
+misc:[
+  {t:"I genuinely lost track of what day of the week it was.",b:78},
+  {t:"Something personal came up that I'd rather not detail.",b:88},
+  {t:"I had an errand that I kept postponing and it finally became urgent.",b:83},
+  {t:"I had a home maintenance situation that escalated.",b:85},
+  {t:"I had a delivery that required me to be home.",b:87},
+  {t:"I was locked out of my house and it took a locksmith 90 minutes to arrive.",b:91},
+  {t:"My bank flagged a suspicious transaction and I was on the phone resolving it.",b:89},
+  {t:"I misread the time on the calendar invite.",b:84},
+  {t:"I had a civic duty — jury duty selection that ran all day.",b:93},
+  {t:"I had a passport renewal situation that required an in-person visit.",b:88},
+  {t:"I had to deal with a tax matter that couldn't be pushed.",b:87},
+  {t:"I was helping a neighbour with an urgent situation.",b:85},
+  {t:"My dishwasher flooded the kitchen and the cleanup took all morning.",b:89},
+  {t:"I had a subscription billing issue that locked me out of critical services.",b:82},
+  {t:"I had to attend a compulsory local council meeting.",b:84},
+  {t:"I lost my wallet and spent 3 hours retracing my steps.",b:88},
+  {t:"I had an unexpected visit from a government assessor.",b:86},
+  {t:"My boiler stopped working in the middle of winter.",b:91},
+  {t:"I had a package that required a signature and the courier had three windows.",b:86},
+  {t:"I had a housing inspection that I'd forgotten was today.",b:85},
+  {t:"My electricity tripped and I had to wait for an engineer.",b:88},
+  {t:"I had to renew a licence that expired today.",b:87},
+  {t:"My landlord did an unannounced inspection visit.",b:82},
+  {t:"I had an online banking issue that required a branch visit.",b:85},
+  {t:"I had a solicitor's call for a legal matter I've been managing.",b:88},
+  {t:"I had to sort out a parking fine before it became a court summons.",b:86},
+  {t:"Something I'd been waiting months on suddenly needed a response within hours.",b:85},
+  {t:"I had a charitable commitment I'd made well in advance.",b:83},
+  {t:"I was volunteering and the session ran long.",b:84},
+  {t:"I was dealing with a home insurance claim that required evidence gathering.",b:86},
+  {t:"I had a prescription to collect that couldn't wait.",b:88},
+  {t:"I fell asleep while reading and didn't wake up until it was too late.",b:79},
+  {t:"I was sorting through important documents I'd been avoiding for months.",b:80},
+  {t:"I had to deal with an issue that my building management referred to me.",b:82},
+  {t:"I had a visa application requirement that surfaced at the last minute.",b:90},
+  {t:"I misjudged how long the queue at the post office would be.",b:85},
+  {t:"I had an appliance installation booked and the engineer arrived 3 hours late.",b:87},
+  {t:"I was caught in a situation where every decision I made was wrong and the day spiralled.",b:79},
+  {t:"I had an HR form that was required before the system deadline.",b:84},
+  {t:"I had a charity auction commitment I had to honour.",b:81},
+  {t:"My storage unit had a security issue I had to verify in person.",b:83},
+  {t:"I had to attend a mandatory community meeting for my residents' association.",b:82},
+  {t:"I was sorting an inheritance-related matter with a solicitor.",b:88},
+  {t:"I had a last-minute relocation errand that couldn't be delegated.",b:84},
+  {t:"I was dealing with an outstanding dispute that needed written documentation.",b:82},
+  {t:"I had a benefits review appointment that I legally had to attend.",b:91},
+  {t:"My letterbox was jammed and I was missing important correspondence.",b:79},
+  {t:"I was filing documents before a statutory deadline.",b:86},
+  {t:"I was getting a notarised document witnessed and it took all afternoon.",b:84},
+  {t:"I simply had a day that refused to go according to plan in any respect.",b:80},
+  {t:"I had to register a change of address across fourteen different organisations.",b:83},
+  {t:"The council needed me to complete a survey in person at the civic centre.",b:81},
+  {t:"I had to resolve a case of mistaken identity with a debt collector.",b:85},
+  {t:"My loft hatch fell and blocked the hallway entirely.",b:77},
+  {t:"The gas engineer's appointment window was 8 AM to 6 PM and I had to be home.",b:88},
+  {t:"I had a court-related letter that needed urgent legal advice.",b:88},
+  {t:"My car insurance renewal had an issue that needed a call to resolve.",b:84},
+  {t:"My water meter was being changed and I had to supervise the access.",b:82},
+  {t:"I had a standing order that went to the wrong account and needed cancelling.",b:85},
+  {t:"I lost my keys, found them, lost them again, and the second loss was more serious.",b:82},
+  {t:"I had a census-related form that required my immediate attention.",b:81},
+  {t:"I had to help a neighbour who had locked themselves out.",b:86},
+  {t:"I had a building society appointment that couldn't be done online.",b:83},
+  {t:"I was waiting for a callback that had a 2-hour window and then never came.",b:82},
+  {t:"I had a letter that turned out to require urgent action by end of day.",b:86},
+  {t:"My central heating timer had reset itself and the house was freezing.",b:79},
+  {t:"I was sorting out a charitable direct debit that had been going to the wrong charity.",b:81},
+  {t:"I had an electoral registration query that turned into a 2-hour process.",b:80},
+  {t:"My bank card was swallowed by an ATM and I had to report it and arrange a new one.",b:87},
+  {t:"I had a complicated online form that logged me out after 20 minutes of inactivity, repeatedly.",b:83},
+  {t:"I had to collect a parcel from a depot 14 miles away that they didn't deliver.",b:84},
+  {t:"My window was stuck open during rain and I had to improvise a seal before leaving.",b:80},
+  {t:"I had a plumber appointment, an electrician appointment, and a delivery — all within 3 hours.",b:85},
+  {t:"My identity documents needed certifying by an approved person before I could apply.",b:86},
+  {t:"I had a recall notice for my car that required a same-week dealer visit.",b:84},
+  {t:"I had to sign for a neighbour's parcel and then couldn't track them down to deliver it.",b:78},
+  {t:"My home alarm triggered without cause and the response company needed verification before they'd leave.",b:82},
+  {t:"I had a lease renewal negotiation that needed to conclude before the renewal window closed.",b:85},
+  {t:"I was dealing with the aftermath of a small fire in the kitchen.",b:91},
+  {t:"My compost bin attracted something and the council had to be called.",b:73},
+  {t:"I had a blocked drain that turned into a full inspection before it was resolved.",b:83},
+  {t:"I had a copyright query on something I'd published that required a detailed response.",b:81},
+  {t:"My smoke detector kept going off during cooking and eventually I had to remove the battery.",b:78},
+  {t:"I had to attend a property viewing for a rental I'm considering.",b:82},
+  {t:"I was contacted by a journalist and spent the morning deciding whether and how to respond.",b:79},
+  {t:"My car was towed for a parking infringement I genuinely didn't see the signs for.",b:85},
+  {t:"I had a DBS check application that needed verifying in person at the post office.",b:83},
+  {t:"I was dealing with a utilities billing dispute that had been ongoing for two months.",b:84},
+  {t:"I had a home security assessment following a local incident.",b:82},
+  {t:"My mortgage application required a document I had to track down urgently.",b:86},
+  {t:"I was on hold with HMRC for an issue that has apparently no online resolution.",b:85},
+  {t:"I had an unexpected guest who arrived without warning and stayed considerably longer.",b:82},
+  {t:"I had to mediate a neighbourly dispute that was becoming genuinely difficult.",b:80},
+  {t:"My broadband contract renewal required a call that I'd been putting off.",b:81},
+  {t:"My home was selected for a market research interview that I'd agreed to months ago.",b:78},
+  {t:"The skip I hired arrived early and I had to supervise the loading.",b:79},
+  {t:"I had a house insurance survey that the insurer required before renewal.",b:83},
+  {t:"I was dealing with a disputed charge on my account from three months ago.",b:84},
+  {t:"My dry cleaning had been ready for two weeks and today was the absolute last day to collect.",b:80},
+  {t:"I had a GP referral letter that needed collecting in person.",b:85},
+  {t:"I had a very important errand, the nature of which I have decided to keep private.",b:87},
+]
+};
+
+const all = Object.entries(excuses).flatMap(([cat,arr])=>arr.map(e=>({...e,cat})));
+let active = "All";
+let currentExcuse = "";
+let usedCount = 0;
+let bonusRemaining = 0;
+
+function totalRemaining() {
+  const free = Math.max(0, FREE_LIMIT - usedCount);
+  return free + bonusRemaining;
+}
+
+function updateQuota() {
+  const rem = totalRemaining();
+  const el = document.getElementById('nav-quota');
+  if (rem >= 9999) {
+    el.textContent = 'Unlimited excuses';
+    el.classList.remove('low');
+  } else {
+    el.textContent = rem === 1 ? '1 excuse remaining' : `${rem} excuses remaining`;
+    el.classList.toggle('low', rem <= 3);
+  }
+}
+
+function openGate(fromCouponLink) {
+  document.getElementById('gate').classList.add('visible');
+  document.getElementById('coupon-input').value = '';
+  document.getElementById('gate-error').textContent = '';
+  document.getElementById('gate-success').textContent = '';
+  // Show dismiss option if user opened it voluntarily (still has excuses)
+  document.getElementById('gate-dismiss-wrap').style.display = (fromCouponLink || totalRemaining() > 0) ? 'block' : 'none';
+  setTimeout(() => document.getElementById('coupon-input').focus(), 100);
+}
+
+function handleGateBackdrop(e) {
+  // Only close if clicking the overlay itself, not the card inside
+  if (e.target === document.getElementById('gate') && totalRemaining() > 0) {
+    closeGate();
+  }
+}
+
+function closeGate() {
+  document.getElementById('gate').classList.remove('visible');
+}
+
+function redeemCoupon() {
+  const input = document.getElementById('coupon-input');
+  const code = input.value.trim().toUpperCase();
+  const errEl = document.getElementById('gate-error');
+  const okEl = document.getElementById('gate-success');
+  errEl.textContent = '';
+  okEl.textContent = '';
+
+  if (!code) { errEl.textContent = 'Please enter a coupon code.'; return; }
+  if (!(code in COUPON_CODES)) {
+    input.classList.add('error');
+    errEl.textContent = 'That code isn\'t valid. Please try again.';
+    setTimeout(() => input.classList.remove('error'), 1200);
+    return;
+  }
+
+  const bonus = COUPON_CODES[code];
+  bonusRemaining += bonus;
+  delete COUPON_CODES[code]; // single-use per session
+  const msg = bonus >= 9999 ? 'Unlimited excuses unlocked. Off you go.' : `${bonus} excuse${bonus===1?'':'s'} added to your account.`;
+  okEl.textContent = msg;
+  updateQuota();
+  const btn = document.getElementById('btn-gen');
+  btn.textContent = 'Generate excuse';
+  btn.classList.remove('locked');
+  setTimeout(() => closeGate(), 1600);
+}
+
+// Allow Enter key in coupon input
+document.getElementById('coupon-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') redeemCoupon();
+});
+
+const pillRow = document.getElementById('pills');
+Object.keys(categories).forEach(label=>{
+  const btn = document.createElement('button');
+  btn.className = 'pill'+(label==='All'?' active':'');
+  btn.textContent = label;
+  btn.onclick = ()=>{
+    document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    active = label;
+  };
+  pillRow.appendChild(btn);
+});
+
+function getPool(){
+  if(active==='All') return all;
+  const key = categories[active];
+  return (excuses[key]||all).map(e=>({...e,cat:key}));
+}
+
+function generate(){
+  if (totalRemaining() <= 0) { openGate(); return; }
+
+  const pool = getPool();
+  const pick = pool[Math.floor(Math.random()*pool.length)];
+  currentExcuse = pick.t;
+
+  // Consume one excuse
+  if (usedCount < FREE_LIMIT) {
+    usedCount++;
+  } else {
+    bonusRemaining = Math.max(0, bonusRemaining - 1);
+  }
+  updateQuota();
+
+  // Update button label if now exhausted
+  const btn = document.getElementById('btn-gen');
+  if (totalRemaining() <= 0) {
+    btn.textContent = 'Unlock more excuses';
+    btn.classList.add('locked');
+  }
+
+  const output = document.getElementById('output');
+  output.classList.remove('refresh');
+  void output.offsetWidth;
+  output.classList.add('refresh');
+  output.innerHTML = `<p class="output-text">${pick.t}</p>`;
+  const meta = document.getElementById('meta');
+  meta.style.opacity='1';
+  const catName = pick.cat?pick.cat.charAt(0).toUpperCase()+pick.cat.slice(1):active;
+  document.getElementById('cat-tag').textContent=catName;
+  const fill = document.getElementById('bel-fill');
+  fill.style.width='0%';
+  setTimeout(()=>{
+    fill.style.width=pick.b+'%';
+    document.getElementById('bel-pct').textContent=pick.b+'%';
+  },50);
+}
+
+function copyExcuse(){
+  if(!currentExcuse) return;
+  navigator.clipboard.writeText(currentExcuse).then(()=>{
+    const t=document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2000);
+  });
+}
+
+updateQuota();
+</script>
+</body>
+</html>
